@@ -1,0 +1,640 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>LMS AI Teaching Assistant</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      margin: 0;
+      padding: 30px 15px;
+      color: #1d2939;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: auto;
+      background: white;
+      padding: 28px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px #00000012;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 16px 0 7px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cdd5df;
+      border-radius: 7px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      border: none;
+      border-radius: 7px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .response {
+      margin-top: 24px;
+      padding: 18px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+    }
+
+    #answer {
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    #usage {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #596579;
+    }
+    .response h3 {
+      margin-top: 24px;
+      color: #1d4ed8;
+    }
+
+    .response p {
+      line-height: 1.7;
+    }
+
+    #quizOptions label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #dbe3ee;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    #quizOptions input[type="radio"] {
+      width: auto;
+      margin: 0;
+    }
+
+    #quizOptions label:hover {
+      background: #eaf2ff;
+    }
+
+    #feedbackBox {
+      background: #f0fdf4;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+    
+    #quizOptions label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      margin: 10px 0;
+      border: 1px solid #d0d9e7;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: normal;
+    }
+    
+    #quizOptions label:hover {
+      background: #edf4ff;
+    }
+    
+    #quizOptions input {
+      width: auto;
+    }
+    
+    #quizFeedback {
+      padding: 15px;
+      background: #eff6ff;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    
+    #score {
+      font-size: 36px;
+      color: #2563eb;
+      text-align: center;
+    }
+    
+    #rating {
+      text-align: center;
+    }
+    
+    #reviewTopics li,
+    #nextTopics li {
+      margin: 10px 0;
+      line-height: 1.6;
+    }
+
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>AI Teaching Assistant</h1>
+    <p>Test educational questions without saving them.</p>
+
+    <form id="askForm">
+      <label>Student Class</label>
+      <input
+        name="classGrade"
+        value="VI"
+        maxlength="30"
+        required
+      >
+
+      <label>Subject</label>
+      <input
+        name="subject"
+        value="Biology"
+        maxlength="100"
+        required
+      >
+
+      <label>Chapter</label>
+      <input
+        name="chapter"
+        value="Cell and Tissue"
+        maxlength="150"
+        required
+      >
+
+      <label>Lesson</label>
+      <input
+        name="lesson"
+        value="Cell Structure and Functions"
+        maxlength="150"
+      >
+
+      <label>Lesson Content (Optional)</label>
+      <textarea
+        name="lessonContent"
+        maxlength="10000"
+        placeholder="Paste lesson text here..."
+      ></textarea>
+
+      <label>Response Language</label>
+      <select name="language">
+        <option>English</option>
+        <option>Hindi</option>
+        <option>Bengali</option>
+      </select>
+
+      <label>Student Question</label>
+      <textarea
+        name="question"
+        maxlength="2000"
+        required
+      >Why are mitochondria called the powerhouse of the cell?</textarea>
+      <label>Number of Assessment Questions</label>
+      <select name="quizCount" id="quizCount">
+        <option value="3">3 Questions — Quick Check</option>
+        <option value="4">4 Questions — Standard</option>
+        <option value="5" selected>5 Questions — Full Check</option>
+      </select>
+      <button id="askBtn" type="submit">
+        Ask AI
+      </button>
+    </form>
+
+    <section class="response">
+  <!-- Initial explanation -->
+  <div id="lessonPanel" hidden>
+    <h2>AI Learning Buddy</h2>
+
+    <h3>📖 Explanation</h3>
+    <p id="answer"></p>
+
+    <h3>💡 Real-Life Example</h3>
+    <p id="example"></p>
+
+    <h3>🧠 Memory Tip</h3>
+    <p id="memoryTip"></p>
+
+    <h3>✨ Fun Fact</h3>
+    <p id="funFact"></p>
+
+    <button type="button" id="startQuiz">
+      Start Assessment
+    </button>
+  </div>
+
+  <!-- Fixed assessment -->
+  <div id="quizPanel" hidden>
+    <h2>Knowledge Check</h2>
+
+    <p id="progress"></p>
+    <h3 id="quizQuestion"></h3>
+
+    <form id="quizForm">
+      <div id="quizOptions"></div>
+
+      <button type="submit" id="checkBtn">
+        Check Answer
+      </button>
+    </form>
+
+    <div id="quizFeedback" hidden>
+      <p id="feedbackText"></p>
+      <button type="button" id="nextBtn">
+        Next Question
+      </button>
+    </div>
+  </div>
+
+  <!-- Final assessment report -->
+  <div id="resultPanel" hidden>
+    <h2>🎓 Learning Assessment Report</h2>
+
+    <h1 id="score"></h1>
+    <h3 id="rating"></h3>
+    <p id="scoreDescription"></p>
+
+    <h3>📚 Topics to Review</h3>
+    <ul id="reviewTopics"></ul>
+
+    <h3>🚀 What to Learn Next</h3>
+    <ul id="nextTopics"></ul>
+
+    <h3>💡 Reading Recommendation</h3>
+    <p id="readingAdvice"></p>
+
+    <button type="button" id="resetBtn">
+      Start New Assessment
+    </button>
+  </div>
+
+  <div id="usage"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const form = document.getElementById('askForm');
+    const askBtn = document.getElementById('askBtn');
+    const quizForm = document.getElementById('quizForm');
+
+    let assessment = {
+      questions: [],
+      answers: [],
+      index: 0,
+      lesson: null,
+    };
+
+    function element(id) {
+      return document.getElementById(id);
+    }
+
+    function setText(id, value) {
+      element(id).textContent = value || '';
+    }
+
+    function showPanel(panelId) {
+      ['lessonPanel', 'quizPanel', 'resultPanel']
+        .forEach(id => {
+          element(id).hidden = id !== panelId;
+        });
+    }
+
+    function addListItem(containerId, content) {
+      const li = document.createElement('li');
+      li.textContent = content;
+      element(containerId).appendChild(li);
+    }
+
+    // 1. Generate lesson and all questions once.
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const payload = Object.fromEntries(
+        new FormData(form).entries()
+      );
+
+      const selectedCount = Math.min(
+        5,
+        Math.max(3, Number(payload.quizCount) || 5)
+      );
+
+      // quizCount is a frontend-only setting.
+      delete payload.quizCount;
+
+      askBtn.disabled = true;
+      askBtn.textContent = 'Generating...';
+      showPanel(null);
+      setText('usage', 'Creating your lesson and quiz...');
+
+      try {
+        const response = await fetch('/api/ai/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            Array.isArray(data.message)
+              ? data.message.join(', ')
+              : data.message || 'AI request failed'
+          );
+        }
+
+        if (
+          !Array.isArray(data.questions) ||
+          data.questions.length < selectedCount
+        ) {
+          throw new Error('Invalid assessment questions');
+        }
+
+        assessment = {
+          questions: data.questions.slice(0, selectedCount),
+          answers: [],
+          index: 0,
+          lesson: data,
+        };
+
+        setText('answer', data.answer);
+        setText('example', data.example);
+        setText('memoryTip', data.memoryTip);
+        setText('funFact', data.funFact);
+
+        setText(
+          'usage',
+          `Model: ${data.model} | ` +
+          `Tokens: ${data.usage.totalTokens}`
+        );
+
+        showPanel('lessonPanel');
+
+      } catch (error) {
+        alert(error.message);
+        setText('usage', 'Assessment generation failed.');
+      } finally {
+        askBtn.disabled = false;
+        askBtn.textContent = 'Ask AI';
+      }
+    });
+
+    // 2. Start the fixed-length quiz.
+    element('startQuiz').addEventListener('click', () => {
+      showPanel('quizPanel');
+      renderQuestion();
+    });
+
+    function renderQuestion() {
+      const index = assessment.index;
+      const question = assessment.questions[index];
+
+      setText(
+        'progress',
+        `Question ${index + 1} of ${assessment.questions.length}`
+      );
+
+      setText('quizQuestion', question.question);
+
+      element('quizOptions').replaceChildren();
+
+      question.options.forEach((option, i) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        input.type = 'radio';
+        input.name = 'quizAnswer';
+        input.value = String(i);
+
+        label.appendChild(input);
+        label.appendChild(
+          document.createTextNode(' ' + option)
+        );
+
+        element('quizOptions').appendChild(label);
+      });
+
+      element('checkBtn').hidden = false;
+      element('quizFeedback').hidden = true;
+    }
+
+    // 3. Evaluate the submitted answer locally.
+    quizForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const selected = document.querySelector(
+        'input[name="quizAnswer"]:checked'
+      );
+
+      if (!selected) {
+        alert('Please select an answer.');
+        return;
+      }
+
+      const question =
+        assessment.questions[assessment.index];
+
+      const answer = Number(selected.value);
+
+      assessment.answers.push(answer);
+
+      const correct = answer === question.correctIndex;
+
+      const message = correct
+        ? '✅ Correct! '
+        : '❌ Not quite. Correct answer: ' +
+          question.options[question.correctIndex] + '. ';
+
+      setText(
+        'feedbackText',
+        message + question.explanation
+      );
+
+      document
+        .querySelectorAll('input[name="quizAnswer"]')
+        .forEach(input => input.disabled = true);
+
+      element('checkBtn').hidden = true;
+      element('quizFeedback').hidden = false;
+
+      element('nextBtn').textContent =
+        assessment.index === assessment.questions.length - 1
+          ? 'View Final Report'
+          : 'Next Question';
+    });
+
+    // 4. Never generate questions beyond the limit.
+    element('nextBtn').addEventListener('click', () => {
+      assessment.index++;
+
+      if (assessment.index >= assessment.questions.length) {
+        finishAssessment();
+        return;
+      }
+
+      renderQuestion();
+    });
+
+    // 5. Calculate final score and understanding rating.
+    function finishAssessment() {
+      const questions = assessment.questions;
+      const answers = assessment.answers;
+
+      const correct = questions.filter(
+        (q, i) => answers[i] === q.correctIndex
+      ).length;
+
+      const percentage = Math.round(
+        (correct / questions.length) * 100
+      );
+
+      let rating;
+      let description;
+
+      if (percentage >= 80) {
+        rating = '🌟 Strong Understanding';
+        description =
+          'You have a strong grasp of the concepts ' +
+          'covered in this assessment.';
+      } else if (percentage >= 60) {
+        rating = '👍 Good Understanding';
+        description =
+          'You understand the main ideas. ' +
+          'Review the topics you missed.';
+      } else if (percentage >= 40) {
+        rating = '📘 Developing Understanding';
+        description =
+          'You are making progress. Review the ' +
+          'concepts and examples before moving on.';
+      } else {
+        rating = '📚 Needs More Practice';
+        description =
+          'Read the lesson again and focus on ' +
+          'the topics listed below.';
+      }
+
+      setText(
+        'score',
+        `${percentage}% (${correct}/${questions.length})`
+      );
+      setText('rating', rating);
+      setText('scoreDescription', description);
+
+      // Identify actual missed topics.
+      element('reviewTopics').replaceChildren();
+
+      const missed = questions.filter(
+        (q, i) => answers[i] !== q.correctIndex
+      );
+
+      const seenTopics = new Set();
+
+      missed.forEach(q => {
+        const topic = q.reviewTopic.trim();
+        const key = topic.toLowerCase();
+
+        if (!seenTopics.has(key)) {
+          seenTopics.add(key);
+          addListItem(
+            'reviewTopics',
+            `${topic}: ${q.explanation}`
+          );
+        }
+      });
+
+      if (missed.length === 0) {
+        addListItem(
+          'reviewTopics',
+          'Great work! No weak areas identified ' +
+          'in this short assessment.'
+        );
+      }
+
+      // Suggested future study topics.
+      element('nextTopics').replaceChildren();
+
+      const suggestions =
+        assessment.lesson.nextTopics || [];
+
+      suggestions.slice(0, 3).forEach(topic => {
+        addListItem('nextTopics', topic);
+      });
+
+      setText(
+        'readingAdvice',
+        assessment.lesson.readingAdvice
+      );
+
+      // Assessment ends here.
+      showPanel('resultPanel');
+    }
+
+    // 6. Allow a completely new assessment.
+    element('resetBtn').addEventListener('click', () => {
+      assessment = {
+        questions: [],
+        answers: [],
+        index: 0,
+        lesson: null,
+      };
+
+      showPanel(null);
+
+      setText(
+        'usage',
+        'Enter a new question above to begin.'
+      );
+
+      form.scrollIntoView({
+        behavior: 'smooth',
+      });
+    });
+  </script>
+
+</body>
+</html>
